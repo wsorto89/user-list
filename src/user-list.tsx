@@ -2,7 +2,6 @@
 // https://jsonplaceholder.typicode.com/
 
 import { useEffect, useMemo, useState } from "react";
-import { C } from "vitest/dist/chunks/reporters.d.CqBhtcTq.js";
 
 // Task: Using the API endpoint
 // https://jsonplaceholder.typicode.com/users
@@ -35,17 +34,11 @@ const useDebounce = <T extends unknown>(value: T, delay: number) => {
   return debouncedValue;
 };
 
-const PAGE_LIMIT = 5;
-
-const UserList = () => {
+const useFetchUsers = (page: number, limit: number) => {
   const [isLoading, setIsLoading] = useState(false);
   const [userList, setUserList] = useState<User[]>([]);
-  const [filterValue, setFilterValue] = useState("");
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-
-  const debouncedFilterValue = useDebounce(filterValue, 400);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -54,7 +47,7 @@ const UserList = () => {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `https://jsonplaceholder.typicode.com/users?_page=${currentPage}&_limit=${PAGE_LIMIT}`,
+          `https://jsonplaceholder.typicode.com/users?_page=${page}&_limit=${limit}`,
           {
             signal,
           }
@@ -79,7 +72,28 @@ const UserList = () => {
     return () => {
       controller.abort();
     };
-  }, [currentPage]);
+  }, [page, limit]);
+
+  return {
+    isLoading,
+    userList,
+    error,
+    totalCount,
+    setUserList,
+  };
+};
+
+const PAGE_LIMIT = 5;
+
+const UserList = () => {
+  const [filterValue, setFilterValue] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const debouncedFilterValue = useDebounce(filterValue, 400);
+  const { isLoading, userList, error, totalCount, setUserList } = useFetchUsers(
+    currentPage,
+    PAGE_LIMIT
+  );
 
   const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFilterValue(event.target.value);
@@ -100,7 +114,6 @@ const UserList = () => {
       ),
     [userList, debouncedFilterValue]
   );
-  console.log("filteredList", filteredList);
 
   return (
     <>
